@@ -21,10 +21,10 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/conduitio/evolviconf"
+	"github.com/conduitio/evolviconf/evolviyaml"
 	"github.com/conduitio/evolviconf/example/model"
 	v1 "github.com/conduitio/evolviconf/example/v1"
 	v2 "github.com/conduitio/evolviconf/example/v2"
-	evolviyaml "github.com/conduitio/evolviconf/yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/matryer/is"
 )
