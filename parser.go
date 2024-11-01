@@ -24,36 +24,62 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
-type VersionParser interface {
-	ParseVersion(ctx context.Context, reader io.Reader) (*semver.Version, error)
+type DecoderProvider[D any] interface {
+	Decoder(io.Reader) D
 }
 
-type VersionParserFunc func(ctx context.Context, reader io.Reader) (*semver.Version, error)
-
-func (f VersionParserFunc) ParseVersion(ctx context.Context, reader io.Reader) (*semver.Version, error) {
-	return f(ctx, reader)
+type VersionParser[D any] interface {
+	ParseVersion(ctx context.Context, decoder D) (*semver.Version, error)
 }
 
-type VersionedConfigParser[T any] interface {
+type VersionedConfigParser[T, D any] interface {
 	LatestKnownVersion() *semver.Version
 	Constraint() *semver.Constraints
-	ParseVersionedConfig(ctx context.Context, reader io.Reader, version *semver.Version) (VersionedConfig[T], Warnings, error)
+	ParseVersionedConfig(ctx context.Context, decoder D, version *semver.Version) (VersionedConfig[T], Warnings, error)
+}
+
+type AllInOneParser[T, D any] interface {
+	DecoderProvider[D]
+	VersionParser[D]
+	VersionedConfigParser[T, D]
 }
 
 type VersionedConfig[T any] interface {
 	ToConfig() T
 }
 
-type Parser[T any] struct {
-	versionParser VersionParser
-	configParsers []VersionedConfigParser[T]
-	latestVersion *semver.Version
+type Parser[T, D any] struct {
+	decoderProvider DecoderProvider[D]
+	versionParser   VersionParser[D]
+	configParsers   []VersionedConfigParser[T, D]
+	latestVersion   *semver.Version
 }
 
-func NewParser[T any](
-	versionParser VersionParser,
-	configParsers []VersionedConfigParser[T],
-) (*Parser[T], error) {
+func NewParser[T, D any](
+	allInOneParsers ...AllInOneParser[T, D],
+) *Parser[T, D] {
+	// Repack allInOneParsers into configParsers
+	var firstParser AllInOneParser[T, D]
+	configParsers := make([]VersionedConfigParser[T, D], len(allInOneParsers))
+	for i, parser := range allInOneParsers {
+		if firstParser == nil {
+			firstParser = parser
+		}
+		configParsers[i] = parser
+	}
+
+	return NewParserExtended[T, D](
+		firstParser,
+		firstParser,
+		configParsers...,
+	)
+}
+
+func NewParserExtended[T, D any](
+	decoderProvider DecoderProvider[D],
+	versionParser VersionParser[D],
+	configParsers ...VersionedConfigParser[T, D],
+) *Parser[T, D] {
 	latestVersion := semver.MustParse("0.0.0")
 	for _, parser := range configParsers {
 		if parser.LatestKnownVersion().GreaterThan(latestVersion) {
@@ -61,25 +87,29 @@ func NewParser[T any](
 		}
 	}
 
-	return &Parser[T]{
-		versionParser: versionParser,
-		configParsers: configParsers,
-		latestVersion: latestVersion,
-	}, nil
+	return &Parser[T, D]{
+		decoderProvider: decoderProvider,
+		versionParser:   versionParser,
+		configParsers:   configParsers,
+		latestVersion:   latestVersion,
+	}
 }
 
-func (p *Parser[T]) Parse(ctx context.Context, reader io.Reader) ([]T, Warnings, error) {
+func (p *Parser[T, D]) Parse(ctx context.Context, reader io.Reader) ([]T, Warnings, error) {
 	// we redirect everything read from reader to buffer with TeeReader, so that
 	// we can first parse the version of the file and choose what type we
 	// actually need to parse the configuration
 	var buffer bytes.Buffer
 	reader = io.TeeReader(reader, &buffer)
 
+	versionDecoder := p.decoderProvider.Decoder(reader)
+	configurationDecoder := p.decoderProvider.Decoder(&buffer)
+
 	var configs []T
 	var warnings Warnings
 
 	for {
-		version, w, err := p.parseVersion(ctx, reader)
+		version, w, err := p.parseVersion(ctx, versionDecoder)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				break
@@ -99,7 +129,7 @@ func (p *Parser[T]) Parse(ctx context.Context, reader io.Reader) ([]T, Warnings,
 			})
 		}
 
-		config, w, err := parser.ParseVersionedConfig(ctx, &buffer, version)
+		config, w, err := parser.ParseVersionedConfig(ctx, configurationDecoder, version)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -110,8 +140,8 @@ func (p *Parser[T]) Parse(ctx context.Context, reader io.Reader) ([]T, Warnings,
 	return configs, warnings, nil
 }
 
-func (p *Parser[T]) parseVersion(ctx context.Context, reader io.Reader) (*semver.Version, Warnings, error) {
-	version, err := p.versionParser.ParseVersion(ctx, reader)
+func (p *Parser[T, D]) parseVersion(ctx context.Context, decoder D) (*semver.Version, Warnings, error) {
+	version, err := p.versionParser.ParseVersion(ctx, decoder)
 	if err != nil {
 		if errors.Is(err, ErrVersionNotSpecified) {
 			// No version specified, fall back to the latest known version.
@@ -128,8 +158,8 @@ func (p *Parser[T]) parseVersion(ctx context.Context, reader io.Reader) (*semver
 // findVersionedConfigParser returns the versioned config parser for the version
 // and a boolean denoting if it's a perfect match. If it's not a perfect match,
 // the best possible match is returned.
-func (p *Parser[T]) findVersionedConfigParser(version *semver.Version) (VersionedConfigParser[T], bool) {
-	var bestMatch VersionedConfigParser[T]
+func (p *Parser[T, D]) findVersionedConfigParser(version *semver.Version) (VersionedConfigParser[T, D], bool) {
+	var bestMatch VersionedConfigParser[T, D]
 	for _, parser := range p.configParsers {
 		if parser.Constraint().Check(version) {
 			if parser.LatestKnownVersion().GreaterThanEqual(version) {

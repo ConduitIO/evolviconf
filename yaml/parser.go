@@ -50,6 +50,10 @@ func NewParser[T any, C evolviconf.VersionedConfig[T]](
 	}
 }
 
+func (p *Parser[T, C]) Decoder(reader io.Reader) *yaml.Decoder {
+	return yaml.NewDecoder(reader)
+}
+
 func (p *Parser[T, C]) LatestKnownVersion() *semver.Version {
 	return p.latestKnownVersion
 }
@@ -58,9 +62,7 @@ func (p *Parser[T, C]) Constraint() *semver.Constraints {
 	return p.constraint
 }
 
-func (p *Parser[T, C]) ParseVersion(_ context.Context, reader io.Reader) (*semver.Version, error) {
-	dec := yaml.NewDecoder(reader)
-
+func (p *Parser[T, C]) ParseVersion(_ context.Context, dec *yaml.Decoder) (*semver.Version, error) {
 	var out struct {
 		Version string `yaml:"version"`
 	}
@@ -78,9 +80,7 @@ func (p *Parser[T, C]) ParseVersion(_ context.Context, reader io.Reader) (*semve
 	return version, err
 }
 
-func (p *Parser[T, C]) ParseVersionedConfig(_ context.Context, reader io.Reader, version *semver.Version) (evolviconf.VersionedConfig[T], evolviconf.Warnings, error) {
-	dec := yaml.NewDecoder(reader)
-
+func (p *Parser[T, C]) ParseVersionedConfig(_ context.Context, dec *yaml.Decoder, version *semver.Version) (evolviconf.VersionedConfig[T], evolviconf.Warnings, error) {
 	// set up decoder hooks
 	var warn evolviconf.Warnings
 	dec.KnownFields(true)

@@ -47,13 +47,7 @@ func TestParser_V1_Success(t *testing.T) {
 		must[*semver.Constraints](semver.NewConstraint("^2")),
 		v2.Changelog,
 	)
-	parser, err := evolviconf.NewParser(
-		v1Parser,
-		[]evolviconf.VersionedConfigParser[model.Configuration]{
-			v1Parser, v2Parser,
-		},
-	)
-	is.NoErr(err)
+	parser := evolviconf.NewParser(v1Parser, v2Parser)
 
 	filepath := "./v1/testdata/pipelines1-success.yml"
 	intPtr := func(i int) *int { return &i }
@@ -154,6 +148,7 @@ func TestParser_V1_Success(t *testing.T) {
 	defer file.Close()
 
 	got, _, err := parser.Parse(context.Background(), file)
+
 	is.NoErr(err)
 	is.Equal("", cmp.Diff(got, want))
 }
