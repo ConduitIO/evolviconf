@@ -1,4 +1,4 @@
-module github.com/conduitio/evolviconf/example
+module github.com/conduitio/evolviconf/example/yaml
 
 go 1.23.0
 
@@ -13,6 +13,6 @@ require (
 
 require github.com/conduitio/yaml/v3 v3.3.0 // indirect
 
-replace github.com/conduitio/evolviconf => ../
+replace github.com/conduitio/evolviconf => ../../
 
-replace github.com/conduitio/evolviconf/evolviyaml => ../evolviyaml
+replace github.com/conduitio/evolviconf/evolviyaml => ../../evolviyaml

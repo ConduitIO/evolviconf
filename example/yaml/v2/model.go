@@ -17,7 +17,7 @@ package v2
 import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/conduitio/evolviconf"
-	"github.com/conduitio/evolviconf/example/model"
+	"github.com/conduitio/evolviconf/example/yaml/model"
 )
 
 // Changelog should be adjusted every time we change the pipeline config and add

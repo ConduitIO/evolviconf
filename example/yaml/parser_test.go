@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package example
+package yaml
 
 import (
 	"context"
@@ -22,9 +22,9 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/conduitio/evolviconf"
 	"github.com/conduitio/evolviconf/evolviyaml"
-	"github.com/conduitio/evolviconf/example/model"
-	v1 "github.com/conduitio/evolviconf/example/v1"
-	v2 "github.com/conduitio/evolviconf/example/v2"
+	"github.com/conduitio/evolviconf/example/yaml/model"
+	v1 "github.com/conduitio/evolviconf/example/yaml/v1"
+	v2 "github.com/conduitio/evolviconf/example/yaml/v2"
 	"github.com/google/go-cmp/cmp"
 	"github.com/matryer/is"
 )
