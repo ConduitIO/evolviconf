@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
+	"sort"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/conduitio/evolviconf"
@@ -33,12 +35,17 @@ type Parser[T any, C evolviconf.VersionedConfig[T]] struct {
 
 func NewParser[T any, C evolviconf.VersionedConfig[T]](
 	constraint *semver.Constraints,
-	latestKnownVersion *semver.Version,
 	changelog evolviconf.Changelog,
 ) *Parser[T, C] {
+	var versions semver.Collection
+	for k := range maps.Keys(changelog) {
+		versions = append(versions, k)
+	}
+	sort.Sort(versions)
+
 	return &Parser[T, C]{
 		constraint:         constraint,
-		latestKnownVersion: latestKnownVersion,
+		latestKnownVersion: versions[len(versions)-1],
 		linter:             newConfigLinter(changelog),
 	}
 }
@@ -51,39 +58,24 @@ func (p *Parser[T, C]) Constraint() *semver.Constraints {
 	return p.constraint
 }
 
-func (p *Parser[T, C]) ParseVersion(_ context.Context, reader io.Reader) (*semver.Version, evolviconf.Position, error) {
+func (p *Parser[T, C]) ParseVersion(_ context.Context, reader io.Reader) (*semver.Version, error) {
 	dec := yaml.NewDecoder(reader)
 
 	var out struct {
 		Version string `yaml:"version"`
 	}
 
-	// versionNode will store the node that contains the version field (for warning)
-	var versionNode yaml.Node
-	dec.WithHook(func(path []string, node *yaml.Node) {
-		if len(path) == 1 && path[0] == "version" {
-			versionNode = *node
-		}
-	})
-
 	err := dec.Decode(&out)
 	if err != nil {
-		return nil, evolviconf.Position{}, err
-	}
-
-	pos := evolviconf.Position{
-		Field:  "version",
-		Line:   versionNode.Line,
-		Column: versionNode.Column,
-		Value:  versionNode.Value,
+		return nil, err
 	}
 
 	if out.Version == "" {
-		return nil, pos, evolviconf.ErrVersionNotSpecified
+		return nil, evolviconf.ErrVersionNotSpecified
 	}
 
 	version, err := semver.NewVersion(out.Version)
-	return version, pos, err
+	return version, err
 }
 
 func (p *Parser[T, C]) ParseVersionedConfig(_ context.Context, reader io.Reader, version *semver.Version) (evolviconf.VersionedConfig[T], evolviconf.Warnings, error) {

@@ -16,7 +16,6 @@ package example
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"testing"
 
@@ -26,6 +25,7 @@ import (
 	v1 "github.com/conduitio/evolviconf/example/v1"
 	v2 "github.com/conduitio/evolviconf/example/v2"
 	evolviyaml "github.com/conduitio/evolviconf/yaml"
+	"github.com/google/go-cmp/cmp"
 	"github.com/matryer/is"
 )
 
@@ -41,16 +41,13 @@ func TestParser_V1_Success(t *testing.T) {
 
 	v1Parser := evolviyaml.NewParser[model.Configuration, v1.Configuration](
 		must[*semver.Constraints](semver.NewConstraint("^1")),
-		semver.MustParse("1.1"),
 		v1.Changelog,
 	)
 	v2Parser := evolviyaml.NewParser[model.Configuration, v2.Configuration](
 		must[*semver.Constraints](semver.NewConstraint("^2")),
-		semver.MustParse("2.2"),
 		v2.Changelog,
 	)
 	parser, err := evolviconf.NewParser(
-		slog.Default(),
 		v1Parser,
 		[]evolviconf.VersionedConfigParser[model.Configuration]{
 			v1Parser, v2Parser,
@@ -60,25 +57,28 @@ func TestParser_V1_Success(t *testing.T) {
 
 	filepath := "./v1/testdata/pipelines1-success.yml"
 	intPtr := func(i int) *int { return &i }
-	want := []v1.Configuration{
+	want := []model.Configuration{
 		{
 			Version: "1.0",
-			Pipelines: map[string]v1.Pipeline{
-				"pipeline1": {
+			Pipelines: []model.Pipeline{
+				{
+					ID:          "pipeline1",
 					Status:      "running",
 					Name:        "pipeline1",
 					Description: "desc1",
-					Processors: map[string]v1.Processor{
-						"pipeline1proc1": {
-							Type: "js",
+					Processors: []model.Processor{
+						{
+							ID:     "pipeline1proc1",
+							Plugin: "js",
 							Settings: map[string]string{
 								"additionalProp1": "string",
 								"additionalProp2": "string",
 							},
 						},
 					},
-					Connectors: map[string]v1.Connector{
-						"con1": {
+					Connectors: []model.Connector{
+						{
+							ID:     "con1",
 							Type:   "source",
 							Plugin: "builtin:s3",
 							Name:   "s3-source",
@@ -86,9 +86,10 @@ func TestParser_V1_Success(t *testing.T) {
 								"aws.region": "us-east-1",
 								"aws.bucket": "my-bucket",
 							},
-							Processors: map[string]v1.Processor{
-								"proc1": {
-									Type: "js",
+							Processors: []model.Processor{
+								{
+									ID:     "proc1",
+									Plugin: "js",
 									Settings: map[string]string{
 										"additionalProp1": "string",
 										"additionalProp2": "string",
@@ -97,7 +98,7 @@ func TestParser_V1_Success(t *testing.T) {
 							},
 						},
 					},
-					DLQ: v1.DLQ{
+					DLQ: model.DLQ{
 						Plugin: "my-plugin",
 						Settings: map[string]string{
 							"foo": "bar",
@@ -110,22 +111,25 @@ func TestParser_V1_Success(t *testing.T) {
 		},
 		{
 			Version: "1.12",
-			Pipelines: map[string]v1.Pipeline{
-				"pipeline2": {
+			Pipelines: []model.Pipeline{
+				{
+					ID:          "pipeline2",
 					Status:      "stopped",
 					Name:        "pipeline2",
 					Description: "desc2",
-					Connectors: map[string]v1.Connector{
-						"con2": {
+					Connectors: []model.Connector{
+						{
+							ID:     "con2",
 							Type:   "destination",
 							Plugin: "builtin:file",
 							Name:   "file-dest",
 							Settings: map[string]string{
 								"path": "my/path",
 							},
-							Processors: map[string]v1.Processor{
-								"con2proc1": {
-									Type: "hoistfield",
+							Processors: []model.Processor{
+								{
+									ID:     "con2proc1",
+									Plugin: "hoistfield",
 									Settings: map[string]string{
 										"additionalProp1": "string",
 										"additionalProp2": "string",
@@ -135,7 +139,8 @@ func TestParser_V1_Success(t *testing.T) {
 						},
 					},
 				},
-				"pipeline3": {
+				{
+					ID:          "pipeline3",
 					Status:      "stopped",
 					Name:        "pipeline3",
 					Description: "empty",
@@ -150,11 +155,7 @@ func TestParser_V1_Success(t *testing.T) {
 
 	got, _, err := parser.Parse(context.Background(), file)
 	is.NoErr(err)
-	is.Equal(got, want[0])
-
-	got, _, err = parser.Parse(context.Background(), file)
-	is.NoErr(err)
-	is.Equal(got, want[1])
+	is.Equal("", cmp.Diff(got, want))
 }
 
 // func TestParser_V1_Warnings(t *testing.T) {

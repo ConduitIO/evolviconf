@@ -101,15 +101,14 @@ type DLQ struct {
 }
 
 func (c Configuration) ToConfig() model.Configuration {
-	if len(c.Pipelines) == 0 {
-		return model.Configuration{}
+	cfg := model.Configuration{Version: c.Version}
+	if len(c.Pipelines) > 0 {
+		cfg.Pipelines = make([]model.Pipeline, len(c.Pipelines))
+		for i, pipeline := range c.Pipelines {
+			cfg.Pipelines[i] = pipeline.ToConfig()
+		}
 	}
-
-	out := make([]model.Pipeline, len(c.Pipelines))
-	for i, pipeline := range c.Pipelines {
-		out[i] = pipeline.ToConfig()
-	}
-	return model.Configuration{Pipelines: out}
+	return cfg
 }
 
 func (p Pipeline) ToConfig() model.Pipeline {

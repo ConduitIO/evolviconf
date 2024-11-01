@@ -1,6 +1,7 @@
 package model
 
 type Configuration struct {
+	Version   string
 	Pipelines []Pipeline
 }
 
