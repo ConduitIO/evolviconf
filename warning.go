@@ -22,7 +22,7 @@ func (w Warnings) Sort() Warnings {
 	return w
 }
 
-func (w Warnings) Log(ctx context.Context, logger slog.Logger) {
+func (w Warnings) Log(ctx context.Context, logger *slog.Logger) {
 	for _, ww := range w {
 		ww.Log(ctx, logger)
 	}
@@ -33,7 +33,7 @@ type Warning struct {
 	Message string
 }
 
-func (w Warning) Log(ctx context.Context, logger slog.Logger) {
+func (w Warning) Log(ctx context.Context, logger *slog.Logger) {
 	var args []any
 
 	if w.Line != 0 {

@@ -48,16 +48,16 @@ const (
 // Expand expands a changelog map into a structure that is useful for traversing
 // in ConfigLinter.
 // TODO is this the right place?
-func (c Changelog) Expand() map[string]map[string]any {
+func (c Changelog) Expand() map[*semver.Version]map[string]any {
 	var versions semver.Collection
 	for k := range maps.Keys(c) {
 		versions = append(versions, k)
 	}
 	sort.Sort(versions)
 
-	knownChanges := make(map[string]map[string]any)
+	knownChanges := make(map[*semver.Version]map[string]any)
 	for _, v := range versions {
-		knownChanges[v.Original()] = make(map[string]any)
+		knownChanges[v] = make(map[string]any)
 	}
 
 	// addChange stores change c in map m by splitting c.field into multiple
@@ -97,14 +97,14 @@ func (c Changelog) Expand() map[string]map[string]any {
 				// warn about deprecated fields in future versions
 				for _, c := range changes {
 					if c.ChangeType == FieldDeprecated {
-						addChange(c, knownChanges[v2.Original()])
+						addChange(c, knownChanges[v2])
 					}
 				}
 			case v.GreaterThan(v2):
 				// warn about introduced fields in older versions
 				for _, c := range changes {
 					if c.ChangeType == FieldIntroduced {
-						addChange(c, knownChanges[v2.Original()])
+						addChange(c, knownChanges[v2])
 					}
 				}
 			}

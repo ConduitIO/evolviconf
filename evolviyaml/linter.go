@@ -1,4 +1,4 @@
-// Copyright © 2023 Meroxa, Inc.
+// Copyright © 2024 Meroxa, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
 package evolviyaml
 
 import (
-	"fmt"
-
+	"github.com/Masterminds/semver/v3"
 	"github.com/conduitio/evolviconf"
 	"github.com/conduitio/yaml/v3"
 )
@@ -27,27 +26,16 @@ type configLinter struct {
 	// Changes are stored hierarchical in submaps. For example, if the field
 	// x.y.z changed in version 1.2.3 the map will contain
 	// { "1.2.3" : { "x" : { "y" : { "z" : Change{} } } } }.
-	expandedChangelog map[string]map[string]any
+	expandedChangelog map[*semver.Version]map[string]any
 }
 
-func newConfigLinter(changelogs ...evolviconf.Changelog) *configLinter {
-	// expand changelogs
-	expandedChangelog := make(map[string]map[string]any)
-	for _, changelog := range changelogs {
-		for k, v := range changelog.Expand() {
-			if _, ok := expandedChangelog[k]; ok {
-				panic(fmt.Errorf("changelog already contains version %v", k))
-			}
-			expandedChangelog[k] = v
-		}
-	}
-
+func newConfigLinter(changelog evolviconf.Changelog) *configLinter {
 	return &configLinter{
-		expandedChangelog: expandedChangelog,
+		expandedChangelog: changelog.Expand(),
 	}
 }
 
-func (cl *configLinter) DecoderHook(version string, warn *evolviconf.Warnings) yaml.DecoderHook {
+func (cl *configLinter) DecoderHook(version *semver.Version, warn *evolviconf.Warnings) yaml.DecoderHook {
 	return func(path []string, node *yaml.Node) {
 		if w, ok := cl.InspectNode(version, path, node); ok {
 			*warn = append(*warn, w)
@@ -55,15 +43,15 @@ func (cl *configLinter) DecoderHook(version string, warn *evolviconf.Warnings) y
 	}
 }
 
-func (cl *configLinter) InspectNode(version string, path []string, node *yaml.Node) (evolviconf.Warning, bool) {
+func (cl *configLinter) InspectNode(version *semver.Version, path []string, node *yaml.Node) (evolviconf.Warning, bool) {
 	if c, ok := cl.findChange(version, path); ok {
 		return cl.newWarning(path[len(path)-1], node, c.Message), true
 	}
 	return evolviconf.Warning{}, false
 }
 
-func (cl *configLinter) findChange(version string, path []string) (evolviconf.Change, bool) {
-	curMap := cl.expandedChangelog[version]
+func (cl *configLinter) findChange(version *semver.Version, path []string) (evolviconf.Change, bool) {
+	curMap := cl.changelogForVersion(version)
 	last := len(path) - 1
 	for i, field := range path {
 		nextMap, ok := curMap[field]
@@ -85,6 +73,21 @@ func (cl *configLinter) findChange(version string, path []string) (evolviconf.Ch
 		break
 	}
 	return evolviconf.Change{}, false
+}
+
+func (cl *configLinter) changelogForVersion(version *semver.Version) map[string]any {
+	var bestMatch *semver.Version
+	for v, m := range cl.expandedChangelog {
+		if version.Equal(v) {
+			// Perfect match.
+			return m
+		}
+		if version.GreaterThan(v) && (bestMatch == nil || v.GreaterThan(bestMatch)) {
+			// Store the best match so far, in case we don't find a perfect match.
+			bestMatch = v
+		}
+	}
+	return cl.expandedChangelog[bestMatch]
 }
 
 func (cl *configLinter) newWarning(field string, node *yaml.Node, message string) evolviconf.Warning {

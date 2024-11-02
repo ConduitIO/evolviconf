@@ -1,4 +1,4 @@
-// Copyright © 2023 Meroxa, Inc.
+// Copyright © 2024 Meroxa, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -85,8 +85,8 @@ func (p *Parser[T, C]) ParseVersionedConfig(_ context.Context, dec *yaml.Decoder
 	var warn evolviconf.Warnings
 	dec.KnownFields(true)
 	dec.WithHook(multiDecoderHook(
-		envDecoderHook, // replace environment variables with their values
-		p.linter.DecoderHook(version.String(), &warn), // lint config as it's parsed
+		envDecoderHook,                       // replace environment variables with their values
+		p.linter.DecoderHook(version, &warn), // lint config as it's parsed
 	))
 
 	cfg := zero[C]()

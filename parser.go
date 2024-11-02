@@ -133,7 +133,7 @@ func (p *Parser[T, D]) Parse(ctx context.Context, reader io.Reader) ([]T, Warnin
 		if err != nil {
 			return nil, nil, err
 		}
-		warnings = append(warnings, w...)
+		warnings = append(warnings, w.Sort()...)
 		configs = append(configs, config.ToConfig())
 	}
 
