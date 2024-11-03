@@ -26,9 +26,9 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/conduitio/evolviconf"
 	"github.com/conduitio/evolviconf/evolviyaml"
-	"github.com/conduitio/evolviconf/example/yaml/model"
-	v1 "github.com/conduitio/evolviconf/example/yaml/v1"
-	v2 "github.com/conduitio/evolviconf/example/yaml/v2"
+	"github.com/conduitio/evolviconf/evolviyaml/example/yaml/model"
+	v1 "github.com/conduitio/evolviconf/evolviyaml/example/yaml/v1"
+	v2 "github.com/conduitio/evolviconf/evolviyaml/example/yaml/v2"
 	"github.com/conduitio/yaml/v3"
 	"github.com/google/go-cmp/cmp"
 	"github.com/matryer/is"
@@ -177,19 +177,6 @@ func TestParser_V1_Warnings(t *testing.T) {
 	is.Equal(out.String(), want)
 }
 
-func TestParser_V1_DuplicatePipelineId(t *testing.T) {
-	is := is.New(t)
-	parser := newTestParser()
-	filepath := "./v1/testdata/pipelines2-duplicate-pipeline-id.yml"
-
-	file, err := os.Open(filepath)
-	is.NoErr(err)
-	defer file.Close()
-
-	_, _, err = parser.Parse(context.Background(), file)
-	is.NoErr(err)
-}
-
 func TestParser_V1_EmptyFile(t *testing.T) {
 	is := is.New(t)
 	parser := newTestParser()
@@ -217,59 +204,52 @@ func TestParser_V1_InvalidYaml(t *testing.T) {
 	is.True(err != nil)
 }
 
-// func TestParser_V1_EnvVars(t *testing.T) {
-// 	is := is.New(t)
-// 	parser := NewParser()
-// 	filepath := "./v1/testdata/pipelines5-env-vars.yml"
-//
-// 	// set env variables
-// 	err := os.Setenv("TEST_PARSER_AWS_SECRET", "my-aws-secret")
-// 	if err != nil {
-// 		t.Fatalf("Failed to write env var: $TEST_PARSER_AWS_SECRET")
-// 	}
-// 	err = os.Setenv("TEST_PARSER_AWS_KEY", "my-aws-key")
-// 	if err != nil {
-// 		t.Fatalf("Failed to write env var: $TEST_PARSER_AWS_KEY")
-// 	}
-// 	err = os.Setenv("TEST_PARSER_AWS_URL", "aws-url")
-// 	if err != nil {
-// 		t.Fatalf("Failed to write env var: $TEST_PARSER_AWS_URL")
-// 	}
-//
-// 	want := Configurations{
-// 		v1.Configuration{
-// 			Version: "1.0",
-// 			Pipelines: map[string]v1.Pipeline{
-// 				"pipeline1": {
-// 					Status:      "running",
-// 					Name:        "pipeline1",
-// 					Description: "desc1",
-// 					Connectors: map[string]v1.Connector{
-// 						"con1": {
-// 							Type:   "source",
-// 							Plugin: "builtin:s3",
-// 							Name:   "s3-source",
-// 							Settings: map[string]string{
-// 								// env variables should be replaced with their values
-// 								"aws.secret": "my-aws-secret",
-// 								"aws.key":    "my-aws-key",
-// 								"aws.url":    "my/aws-url/url",
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		},
-// 	}
-//
-// 	file, err := os.Open(filepath)
-// 	is.NoErr(err)
-// 	defer file.Close()
-//
-// 	got, err := parser.ParseConfigurations(context.Background(), file)
-// 	is.NoErr(err)
-// 	is.Equal(got, want)
-// }
+func TestParser_V1_EnvVars(t *testing.T) {
+	is := is.New(t)
+	parser := newTestParser(evolviyaml.EnvDecoderHook)
+	filepath := "./v1/testdata/pipelines5-env-vars.yml"
+
+	// set env variables
+	t.Setenv("TEST_PARSER_AWS_SECRET", "my-aws-secret")
+	t.Setenv("TEST_PARSER_AWS_KEY", "my-aws-key")
+	t.Setenv("TEST_PARSER_AWS_URL", "aws-url")
+
+	want := []model.Configuration{
+		{
+			Version: "1.0",
+			Pipelines: []model.Pipeline{
+				{
+					ID:          "pipeline1",
+					Status:      "running",
+					Name:        "pipeline1",
+					Description: "desc1",
+					Connectors: []model.Connector{
+						{
+							ID:     "con1",
+							Type:   "source",
+							Plugin: "builtin:s3",
+							Name:   "s3-source",
+							Settings: map[string]string{
+								// env variables should be replaced with their values
+								"aws.secret": "my-aws-secret",
+								"aws.key":    "my-aws-key",
+								"aws.url":    "my/aws-url/url",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	file, err := os.Open(filepath)
+	is.NoErr(err)
+	defer file.Close()
+
+	got, _, err := parser.Parse(context.Background(), file)
+	is.NoErr(err)
+	is.Equal(got, want)
+}
 
 func TestParser_V1_ParseV2Config(t *testing.T) {
 	is := is.New(t)
@@ -483,19 +463,6 @@ func TestParser_V2_Warnings(t *testing.T) {
 	is.Equal(out.String(), want)
 }
 
-func TestParser_V2_DuplicatePipelineId(t *testing.T) {
-	is := is.New(t)
-	parser := newTestParser()
-	filepath := "./v2/testdata/pipelines2-duplicate-pipeline-id.yml"
-
-	file, err := os.Open(filepath)
-	is.NoErr(err)
-	defer file.Close()
-
-	_, _, err = parser.Parse(context.Background(), file)
-	is.NoErr(err)
-}
-
 func TestParser_V2_EmptyFile(t *testing.T) {
 	is := is.New(t)
 	parser := newTestParser()
@@ -523,61 +490,52 @@ func TestParser_V2_InvalidYaml(t *testing.T) {
 	is.True(err != nil)
 }
 
-// func TestParser_V2_EnvVars(t *testing.T) {
-// 	is := is.New(t)
-// 	parser := NewParser()
-// 	filepath := "./v2/testdata/pipelines5-env-vars.yml"
-//
-// 	// set env variables
-// 	err := os.Setenv("TEST_PARSER_AWS_SECRET", "my-aws-secret")
-// 	if err != nil {
-// 		t.Fatalf("Failed to write env var: $TEST_PARSER_AWS_SECRET")
-// 	}
-// 	err = os.Setenv("TEST_PARSER_AWS_KEY", "my-aws-key")
-// 	if err != nil {
-// 		t.Fatalf("Failed to write env var: $TEST_PARSER_AWS_KEY")
-// 	}
-// 	err = os.Setenv("TEST_PARSER_AWS_URL", "aws-url")
-// 	if err != nil {
-// 		t.Fatalf("Failed to write env var: $TEST_PARSER_AWS_URL")
-// 	}
-//
-// 	want := Configurations{
-// 		v2.Configuration{
-// 			Version: "2.0",
-// 			Pipelines: []v2.Pipeline{
-// 				{
-// 					ID:          "pipeline1",
-// 					Status:      "running",
-// 					Name:        "pipeline1",
-// 					Description: "desc1",
-// 					Connectors: []v2.Connector{
-// 						{
-// 							ID:     "con1",
-// 							Type:   "source",
-// 							Plugin: "builtin:s3",
-// 							Name:   "s3-source",
-// 							Settings: map[string]string{
-// 								// env variables should be replaced with their values
-// 								"aws.secret": "my-aws-secret",
-// 								"aws.key":    "my-aws-key",
-// 								"aws.url":    "my/aws-url/url",
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		},
-// 	}
-//
-// 	file, err := os.Open(filepath)
-// 	is.NoErr(err)
-// 	defer file.Close()
-//
-// 	got, err := parser.ParseConfigurations(context.Background(), file)
-// 	is.NoErr(err)
-// 	is.Equal(got, want)
-// }
+func TestParser_V2_EnvVars(t *testing.T) {
+	is := is.New(t)
+	parser := newTestParser(evolviyaml.EnvDecoderHook)
+	filepath := "./v2/testdata/pipelines5-env-vars.yml"
+
+	// set env variables
+	t.Setenv("TEST_PARSER_AWS_SECRET", "my-aws-secret")
+	t.Setenv("TEST_PARSER_AWS_KEY", "my-aws-key")
+	t.Setenv("TEST_PARSER_AWS_URL", "aws-url")
+
+	want := []model.Configuration{
+		{
+			Version: "2.0",
+			Pipelines: []model.Pipeline{
+				{
+					ID:          "pipeline1",
+					Status:      "running",
+					Name:        "pipeline1",
+					Description: "desc1",
+					Connectors: []model.Connector{
+						{
+							ID:     "con1",
+							Type:   "source",
+							Plugin: "builtin:s3",
+							Name:   "s3-source",
+							Settings: map[string]string{
+								// env variables should be replaced with their values
+								"aws.secret": "my-aws-secret",
+								"aws.key":    "my-aws-key",
+								"aws.url":    "my/aws-url/url",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	file, err := os.Open(filepath)
+	is.NoErr(err)
+	defer file.Close()
+
+	got, _, err := parser.Parse(context.Background(), file)
+	is.NoErr(err)
+	is.Equal(got, want)
+}
 
 func TestParser_V2_ParseV1Config(t *testing.T) {
 	is := is.New(t)
@@ -622,7 +580,7 @@ func (rr replacingReader) Read(p []byte) (int, error) {
 	return i, nil
 }
 
-func newTestParser() *evolviconf.Parser[model.Configuration, *yaml.Decoder] {
+func newTestParser(hooks ...yaml.DecoderHook) *evolviconf.Parser[model.Configuration, *yaml.Decoder] {
 	v1Parser := evolviyaml.NewParser[model.Configuration, v1.Configuration](
 		must[*semver.Constraints](semver.NewConstraint("^1")),
 		v1.Changelog,
@@ -631,6 +589,8 @@ func newTestParser() *evolviconf.Parser[model.Configuration, *yaml.Decoder] {
 		must[*semver.Constraints](semver.NewConstraint("^2")),
 		v2.Changelog,
 	)
+	v1Parser.WithHook(evolviyaml.MultiDecoderHook(hooks...))
+	v2Parser.WithHook(evolviyaml.MultiDecoderHook(hooks...))
 	return evolviconf.NewParser(v1Parser, v2Parser)
 }
 

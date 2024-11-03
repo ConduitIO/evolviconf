@@ -31,6 +31,7 @@ type Parser[T any, C evolviconf.VersionedConfig[T]] struct {
 	constraint         *semver.Constraints
 	latestKnownVersion *semver.Version
 	linter             *configLinter
+	hook               yaml.DecoderHook
 }
 
 func NewParser[T any, C evolviconf.VersionedConfig[T]](
@@ -48,6 +49,11 @@ func NewParser[T any, C evolviconf.VersionedConfig[T]](
 		latestKnownVersion: versions[len(versions)-1],
 		linter:             newConfigLinter(changelog),
 	}
+}
+
+func (p *Parser[T, C]) WithHook(hook yaml.DecoderHook) *Parser[T, C] {
+	p.hook = hook
+	return p
 }
 
 func (p *Parser[T, C]) Decoder(reader io.Reader) *yaml.Decoder {
@@ -84,8 +90,8 @@ func (p *Parser[T, C]) ParseVersionedConfig(_ context.Context, dec *yaml.Decoder
 	// set up decoder hooks
 	var warn evolviconf.Warnings
 	dec.KnownFields(true)
-	dec.WithHook(multiDecoderHook(
-		envDecoderHook,                       // replace environment variables with their values
+	dec.WithHook(MultiDecoderHook(
+		p.hook,
 		p.linter.DecoderHook(version, &warn), // lint config as it's parsed
 	))
 

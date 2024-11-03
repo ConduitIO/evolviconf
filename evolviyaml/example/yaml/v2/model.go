@@ -17,7 +17,7 @@ package v2
 import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/conduitio/evolviconf"
-	"github.com/conduitio/evolviconf/example/yaml/model"
+	"github.com/conduitio/evolviconf/evolviyaml/example/yaml/model"
 )
 
 // Changelog should be adjusted every time we change the pipeline config and add
@@ -85,7 +85,8 @@ type Connector struct {
 }
 
 type Processor struct {
-	ID        string            `yaml:"id" json:"id"`
+	ID string `yaml:"id" json:"id"`
+	// Deprecated: use Plugin instead.
 	Type      string            `yaml:"type" json:"type"`
 	Plugin    string            `yaml:"plugin" json:"plugin"`
 	Condition string            `yaml:"condition" json:"condition"`
@@ -172,6 +173,7 @@ func (c Connector) processorsToConfig() []model.Processor {
 func (p Processor) ToConfig() model.Processor {
 	plugin := p.Plugin
 	if plugin == "" {
+		// Fallback to deprecated field.
 		plugin = p.Type
 	}
 

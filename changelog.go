@@ -46,8 +46,9 @@ const (
 )
 
 // Expand expands a changelog map into a structure that is useful for traversing
-// in ConfigLinter.
-// TODO is this the right place?
+// in ConfigLinter. It returns a map of all versions and their changes. The
+// changes are stored in a nested map where each token in the field is a key in
+// the map. This allows for easy traversal of the changes in a linter.
 func (c Changelog) Expand() map[*semver.Version]map[string]any {
 	var versions semver.Collection
 	for k := range maps.Keys(c) {

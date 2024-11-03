@@ -16,20 +16,35 @@ package evolviyaml
 
 import (
 	"os"
+	"slices"
 
 	"github.com/conduitio/yaml/v3"
 )
 
-func envDecoderHook(_ []string, node *yaml.Node) {
+// EnvDecoderHook replaces all string values with their environment variable
+// expanded versions.
+func EnvDecoderHook(_ []string, node *yaml.Node) {
 	if node.Kind == yaml.ScalarNode && node.Tag == "!!str" {
 		node.SetString(os.ExpandEnv(node.Value))
 	}
 }
 
-func multiDecoderHook(hooks ...yaml.DecoderHook) yaml.DecoderHook {
-	return func(path []string, node *yaml.Node) {
-		for _, h := range hooks {
-			h(path, node)
+// MultiDecoderHook returns a decoder hook that calls all the given hooks in
+// order.
+func MultiDecoderHook(hooks ...yaml.DecoderHook) yaml.DecoderHook {
+	hooks = slices.DeleteFunc(hooks, func(h yaml.DecoderHook) bool {
+		return h == nil
+	})
+	switch len(hooks) {
+	case 0:
+		return nil
+	case 1:
+		return hooks[0]
+	default:
+		return func(path []string, node *yaml.Node) {
+			for _, h := range hooks {
+				h(path, node)
+			}
 		}
 	}
 }

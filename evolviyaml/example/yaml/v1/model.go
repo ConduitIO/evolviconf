@@ -17,7 +17,7 @@ package v1
 import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/conduitio/evolviconf"
-	"github.com/conduitio/evolviconf/example/yaml/model"
+	"github.com/conduitio/evolviconf/evolviyaml/example/yaml/model"
 )
 
 // Changelog should be adjusted every time we change the pipeline config and add
@@ -40,38 +40,38 @@ var Changelog = evolviconf.Changelog{
 }
 
 type Configuration struct {
-	Version   string              `yaml:"version"`
-	Pipelines map[string]Pipeline `yaml:"pipelines"`
+	Version   string              `yaml:"version" json:"version"`
+	Pipelines map[string]Pipeline `yaml:"pipelines" json:"pipelines"`
 }
 
 type Pipeline struct {
-	Status      string               `yaml:"status"`
-	Name        string               `yaml:"name"`
-	Description string               `yaml:"description"`
-	Connectors  map[string]Connector `yaml:"connectors,omitempty"`
-	Processors  map[string]Processor `yaml:"processors,omitempty"`
-	DLQ         DLQ                  `yaml:"dead-letter-queue"`
+	Status      string               `yaml:"status" json:"status"`
+	Name        string               `yaml:"name" json:"name"`
+	Description string               `yaml:"description" json:"description"`
+	Connectors  map[string]Connector `yaml:"connectors,omitempty" json:"connectors,omitempty"`
+	Processors  map[string]Processor `yaml:"processors,omitempty" json:"processors,omitempty"`
+	DLQ         DLQ                  `yaml:"dead-letter-queue" json:"dead-letter-queue"`
 }
 
 type Connector struct {
-	Type       string               `yaml:"type"`
-	Plugin     string               `yaml:"plugin"`
-	Name       string               `yaml:"name"`
-	Settings   map[string]string    `yaml:"settings"`
-	Processors map[string]Processor `yaml:"processors,omitempty"`
+	Type       string               `yaml:"type" json:"type"`
+	Plugin     string               `yaml:"plugin" json:"plugin"`
+	Name       string               `yaml:"name" json:"name"`
+	Settings   map[string]string    `yaml:"settings" json:"settings"`
+	Processors map[string]Processor `yaml:"processors,omitempty" json:"processors,omitempty"`
 }
 
 type Processor struct {
-	Type     string            `yaml:"type"`
-	Settings map[string]string `yaml:"settings"`
-	Workers  int               `yaml:"workers"`
+	Type     string            `yaml:"type" json:"type"`
+	Settings map[string]string `yaml:"settings" json:"settings"`
+	Workers  int               `yaml:"workers" json:"workers"`
 }
 
 type DLQ struct {
-	Plugin              string            `yaml:"plugin"`
-	Settings            map[string]string `yaml:"settings"`
-	WindowSize          *int              `yaml:"window-size"`
-	WindowNackThreshold *int              `yaml:"window-nack-threshold"`
+	Plugin              string            `yaml:"plugin" json:"plugin"`
+	Settings            map[string]string `yaml:"settings" json:"settings"`
+	WindowSize          *int              `yaml:"window-size" json:"window-size"`
+	WindowNackThreshold *int              `yaml:"window-nack-threshold" json:"window-nack-threshold"`
 }
 
 func (c Configuration) ToConfig() model.Configuration {
