@@ -1,5 +1,7 @@
 github.com/Masterminds/semver/v3 v3.3.0 h1:B8LGeaivUe71a5qox1ICM/JLl0NqZSW5CHyL+hmvYS0=
 github.com/Masterminds/semver/v3 v3.3.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
+github.com/conduitio/evolviconf v0.0.0-20241105144321-27c16bddeb38 h1:hUvQ2irc5CVELscW0kSuTTTqjI/uBqtbCTTbUxDLv70=
+github.com/conduitio/evolviconf v0.0.0-20241105144321-27c16bddeb38/go.mod h1:xhvEztHqNrIpDFYfbdxZaCpw4E8iM8R0R2mhoOHUfbM=
 github.com/conduitio/yaml/v3 v3.3.0 h1:kbbaOSHcuH39gP4+rgbJGl6DSbLZcJgEaBvkEXJlCsI=
 github.com/conduitio/yaml/v3 v3.3.0/go.mod h1:JNgFMOX1t8W4YJuRZOh6GggVtSMsgP9XgTw+7dIenpc=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
