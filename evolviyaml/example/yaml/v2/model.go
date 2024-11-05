@@ -101,7 +101,7 @@ type DLQ struct {
 	WindowNackThreshold *int              `yaml:"window-nack-threshold" json:"window-nack-threshold"`
 }
 
-func (c Configuration) ToConfig() model.Configuration {
+func (c Configuration) ToConfig() (model.Configuration, error) {
 	cfg := model.Configuration{Version: c.Version}
 	if len(c.Pipelines) > 0 {
 		cfg.Pipelines = make([]model.Pipeline, len(c.Pipelines))
@@ -109,7 +109,7 @@ func (c Configuration) ToConfig() model.Configuration {
 			cfg.Pipelines[i] = pipeline.ToConfig()
 		}
 	}
-	return cfg
+	return cfg, nil
 }
 
 func (p Pipeline) ToConfig() model.Pipeline {

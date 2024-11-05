@@ -45,7 +45,7 @@ type AllInOneParser[T, D any] interface {
 }
 
 type VersionedConfig[T any] interface {
-	ToConfig() T
+	ToConfig() (T, error)
 }
 
 type Parser[T, D any] struct {
@@ -134,7 +134,13 @@ func (p *Parser[T, D]) Parse(ctx context.Context, reader io.Reader) ([]T, Warnin
 			return nil, nil, err
 		}
 		warnings = append(warnings, w.Sort()...)
-		configs = append(configs, config.ToConfig())
+
+		out, err := config.ToConfig()
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to convert versioned config to actual config: %w", err)
+		}
+
+		configs = append(configs, out)
 	}
 
 	return configs, warnings, nil
