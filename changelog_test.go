@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/google/go-cmp/cmp"
 	"github.com/matryer/is"
 )
 
@@ -59,8 +60,8 @@ func TestExpandChangelog(t *testing.T) {
 		}},
 	}
 
-	want := map[string]map[string]any{
-		"1.0": {
+	want := map[*semver.Version]map[string]any{
+		semver.MustParse("1.0"): {
 			"pipelines": map[string]any{
 				"*": map[string]any{
 					"dead-letter-queue": Change{
@@ -76,7 +77,7 @@ func TestExpandChangelog(t *testing.T) {
 				},
 			},
 		},
-		"1.1": {
+		semver.MustParse("1.1"): {
 			"pipelines": map[string]any{
 				"*": map[string]any{
 					"dead-letter-queue": map[string]any{
@@ -94,7 +95,7 @@ func TestExpandChangelog(t *testing.T) {
 				},
 			},
 		},
-		"1.2": {
+		semver.MustParse("1.2"): {
 			"pipelines": map[string]any{
 				"*": map[string]any{
 					"name": Change{
@@ -105,7 +106,7 @@ func TestExpandChangelog(t *testing.T) {
 				},
 			},
 		},
-		"1.3": {
+		semver.MustParse("1.3"): {
 			"pipelines": map[string]any{
 				"*": map[string]any{
 					"name": Change{
@@ -116,7 +117,7 @@ func TestExpandChangelog(t *testing.T) {
 				},
 			},
 		},
-		"1.4": {
+		semver.MustParse("1.4"): {
 			"pipelines": Change{
 				Field:      "pipelines",
 				ChangeType: FieldDeprecated,
@@ -126,5 +127,5 @@ func TestExpandChangelog(t *testing.T) {
 	}
 
 	got := have.Expand()
-	is.Equal(want, got)
+	is.Equal("", cmp.Diff(want, got))
 }
