@@ -49,9 +49,9 @@ const (
 // in ConfigLinter. It returns a map of all versions and their changes. The
 // changes are stored in a nested map where each token in the field is a key in
 // the map. This allows for easy traversal of the changes in a linter.
-func (c Changelog) Expand() map[*semver.Version]map[string]any {
+func (cl Changelog) Expand() map[*semver.Version]map[string]any {
 	var versions semver.Collection
-	for k := range maps.Keys(c) {
+	for k := range maps.Keys(cl) {
 		versions = append(versions, k)
 	}
 	sort.Sort(versions)
@@ -61,55 +61,56 @@ func (c Changelog) Expand() map[*semver.Version]map[string]any {
 		knownChanges[v] = make(map[string]any)
 	}
 
-	// addChange stores change c in map m by splitting c.field into multiple
-	// tokens and storing it in m[token1][token2][...][tokenN]. If any map in
-	// that hierarchy does not exist it is created. If any value in that
-	// hierarchy exists and is _not_ a map it is _not_ replaced. This means that
-	// changes related to parent fields take precedence over changes related to
-	// child fields.
-	addChange := func(c Change, m map[string]any) {
-		tokens := strings.Split(c.Field, ".")
-		curMap := m
-		for i, t := range tokens {
-			if i == len(tokens)-1 {
-				// last token, set it in the map
-				curMap[t] = c
-				break
-			}
-			raw, ok := curMap[t]
-			if !ok {
-				nextMap := make(map[string]any)
-				curMap[t] = nextMap
-				curMap = nextMap
-				continue
-			}
-			curMap, ok = raw.(map[string]any)
-			if !ok {
-				break
-			}
-		}
-	}
-
 	for _, v := range versions {
-		changes := c[v]
+		changes := cl[v]
 		for _, v2 := range versions {
 			switch {
 			case !v.GreaterThan(v2):
 				// warn about deprecated fields in future versions
 				for _, c := range changes {
 					if c.ChangeType == FieldDeprecated {
-						addChange(c, knownChanges[v2])
+						cl.addChange(c, knownChanges[v2])
 					}
 				}
 			case v.GreaterThan(v2):
 				// warn about introduced fields in older versions
 				for _, c := range changes {
 					if c.ChangeType == FieldIntroduced {
-						addChange(c, knownChanges[v2])
+						cl.addChange(c, knownChanges[v2])
 					}
 				}
 			}
 		}
 	}
 	return knownChanges
+}
+
+// addChange stores change c in map m by splitting c.field into multiple
+// tokens and storing it in m[token1][token2][...][tokenN]. If any map in
+// that hierarchy does not exist it is created. If any value in that
+// hierarchy exists and is _not_ a map it is _not_ replaced. This means that
+// changes related to parent fields take precedence over changes related to
+// child fields.
+
+func (cl Changelog) addChange(change Change, m map[string]any) {
+	tokens := strings.Split(change.Field, ".")
+	curMap := m
+	for i, t := range tokens {
+		if i == len(tokens)-1 {
+			// last token, set it in the map
+			curMap[t] = change
+			break
+		}
+		raw, ok := curMap[t]
+		if !ok {
+			nextMap := make(map[string]any)
+			curMap[t] = nextMap
+			curMap = nextMap
+			continue
+		}
+		curMap, ok = raw.(map[string]any)
+		if !ok {
+			break
+		}
+	}
 }
