@@ -56,6 +56,32 @@ authToken: "abc"`)
 	// {Host:localhost Port:8080}
 }
 
+func ExampleParseConfigWithDeprecatedFields() {
+	constraint, err := semver.NewConstraint("^1")
+	if err != nil {
+		panic(err)
+	}
+
+	parser := evolviconf.NewParser[app.Configuration, *yaml.Decoder](
+		evolviyaml.NewParser[app.Configuration, v1.YAMLConfiguration](
+			constraint,
+			v1.Changelog,
+		),
+	)
+
+	parseAndPrint(
+		parser,
+		`
+version: 1.2
+host: localhost
+port: 8080
+authToken: "abc"`)
+
+	// Output:
+	// level=WARN msg="port is deprecated in 1.2, and will be removed in a future version" line=4 column=1 field=port value=8080
+	// {Host:localhost Port:8080}
+}
+
 func parseAndPrint(parser *evolviconf.Parser[app.Configuration, *yaml.Decoder], yamlConf string) {
 	reader := strings.NewReader(yamlConf)
 
@@ -77,7 +103,7 @@ func newLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(
 		os.Stdout,
 		&slog.HandlerOptions{ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// Remove the time attribute
+			// Remove the time attribute, so the logs can be easily checked by the example test
 			if a.Key == slog.TimeKey {
 				return slog.Attr{}
 			}

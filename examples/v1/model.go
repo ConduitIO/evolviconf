@@ -31,6 +31,13 @@ var Changelog = evolviconf.Changelog{
 			Message:    "authToken is a field introduced in 1.1",
 		},
 	},
+	semver.MustParse("1.2"): {
+		{
+			Field:      "port",
+			ChangeType: evolviconf.FieldDeprecated,
+			Message:    "port is deprecated in 1.2, and will be removed in a future version",
+		},
+	},
 }
 
 // YAMLConfiguration is the struct that corresponds to a version of a YAML configuration.
