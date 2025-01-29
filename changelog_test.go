@@ -126,5 +126,8 @@ func TestExpandChangelog(t *testing.T) {
 	}
 
 	got := have.Expand()
-	is.Equal(want, got)
+	is.Equal(len(want), len(got))
+	for version, m := range got {
+		is.Equal(want[version.Original()], m)
+	}
 }

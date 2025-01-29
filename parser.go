@@ -131,7 +131,7 @@ func (p *Parser[T, D]) Parse(ctx context.Context, reader io.Reader) ([]T, Warnin
 
 		config, w, err := parser.ParseVersionedConfig(ctx, configurationDecoder, version)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to parse versioned config: %w", err)
 		}
 		warnings = append(warnings, w.Sort()...)
 
@@ -155,7 +155,7 @@ func (p *Parser[T, D]) parseVersion(ctx context.Context, decoder D) (*semver.Ver
 				Message: "no version defined, falling back to parser version " + p.latestVersion.String(),
 			}}, nil
 		}
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to parse version: %w", err)
 	}
 
 	return version, nil, nil

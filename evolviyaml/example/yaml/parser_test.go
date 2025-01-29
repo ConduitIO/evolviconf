@@ -331,7 +331,7 @@ func TestParser_V2_Success(t *testing.T) {
 				},
 			},
 		},
-		model.Configuration{
+		{
 			Version: "2.12",
 			Pipelines: []model.Pipeline{
 				{

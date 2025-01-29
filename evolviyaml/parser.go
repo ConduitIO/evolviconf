@@ -97,7 +97,6 @@ func (p *Parser[T, C]) ParseVersionedConfig(_ context.Context, dec *yaml.Decoder
 
 	cfg := zero[C]()
 	err := dec.Decode(&cfg)
-
 	if err != nil {
 		// check if it's a type error (document was partially decoded)
 		var typeErr *yaml.TypeError
