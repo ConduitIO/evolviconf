@@ -91,7 +91,6 @@ func (cl Changelog) Expand() map[*semver.Version]map[string]any {
 // hierarchy exists and is _not_ a map it is _not_ replaced. This means that
 // changes related to parent fields take precedence over changes related to
 // child fields.
-
 func (cl Changelog) addChange(change Change, m map[string]any) {
 	tokens := strings.Split(change.Field, ".")
 	curMap := m
