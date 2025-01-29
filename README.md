@@ -1,6 +1,9 @@
 # EvolviConf
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue)](/LICENSE.md)
+[![Test](https://github.com/ConduitIO/evolviconf/actions/workflows/test.yml/badge.svg)](https://github.com/ConduitIO/evolviconf/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/conduitio/evolviconf)](https://goreportcard.com/report/github.com/conduitio/evolviconf)
+[![Go Reference](https://pkg.go.dev/badge/github.com/conduitio/evolviconf.svg)](https://pkg.go.dev/github.com/conduitio/evolviconf)
 
 EvolviConf is a minimalistic Go library that handles versioned (evolving)
 configuration files.
