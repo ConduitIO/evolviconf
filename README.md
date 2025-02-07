@@ -22,3 +22,5 @@ Examples of using EvolviConf can be found in the [examples](/examples)
 directory.
 
 EvolviConf was created and open-sourced by [Meroxa](https://meroxa.io).
+
+![scarf pixel](https://static.scarf.sh/a.png?x-pxid=c07050b2-6ffc-4793-b05f-5d7b9d0cf34e)
