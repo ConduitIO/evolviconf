@@ -1,6 +1,6 @@
 module github.com/conduitio/evolviconf/tools
 
-go 1.24.1
+go 1.24.2
 
 tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 
